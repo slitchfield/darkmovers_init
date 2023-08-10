@@ -3,4 +3,4 @@
 mod app;
 pub use app::TemplateApp;
 
-mod Entity;
+mod entity;

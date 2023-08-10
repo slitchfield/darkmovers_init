@@ -1,4 +1,5 @@
-use crate::Entity;
+use crate::entity;
+use names::Generator;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -12,8 +13,12 @@ pub struct TemplateApp {
     value: u32,
     #[serde(skip)]
     d6value: u32,
+    #[serde(skip)]
+    mookvalue: u32,
+    #[serde(skip)]
+    mookd6value: u32,
 
-    entity_list: Vec<Entity::Entity>,
+    entity_list: Vec<entity::Entity>,
 }
 
 impl Default for TemplateApp {
@@ -23,6 +28,8 @@ impl Default for TemplateApp {
             label: "Hello World!".to_owned(),
             value: 10,
             d6value: 1,
+            mookvalue: 10,
+            mookd6value: 1,
             entity_list: vec![],
         }
     }
@@ -57,6 +64,8 @@ impl eframe::App for TemplateApp {
             label,
             value,
             d6value,
+            mookvalue,
+            mookd6value,
             entity_list,
         } = self;
 
@@ -91,8 +100,38 @@ impl eframe::App for TemplateApp {
             ui.add(egui::Slider::new(d6value, 0..=6));
 
             if ui.button("Add Entity").clicked() {
-                let entity = Entity::Entity::new(label, *value, *d6value);
+                let entity = entity::Entity::new(label, *value, *d6value);
                 println!("Adding entity: {}", entity);
+                entity_list.push(entity);
+            }
+        });
+
+        egui::SidePanel::right("right_panel").show(ctx, |ui| {
+            ui.heading("Predefined Mooks");
+
+            ui.strong("Profile A (6+1d6)");
+            if ui.button("Generate Mook").clicked() {
+                let mut generator = Generator::default();
+                let random_name = format!("Mook {}", generator.next().unwrap());
+                let entity = entity::Entity::new(random_name.as_str(), 6, 1);
+                entity_list.push(entity);
+            }
+            ui.strong("Profile B (9+1d6)");
+            if ui.button("Generate Mook").clicked() {
+                let mut generator = Generator::default();
+                let random_name = format!("Mook {}", generator.next().unwrap());
+                let entity = entity::Entity::new(random_name.as_str(), 6, 1);
+                entity_list.push(entity);
+            }
+            ui.strong("Other");
+            ui.label("Base Init.:");
+            ui.add(egui::Slider::new(mookvalue, 0..=20));
+            ui.label("Init d6");
+            ui.add(egui::Slider::new(mookd6value, 0..=6));
+            if ui.button("Generate Mook").clicked() {
+                let mut generator = Generator::default();
+                let random_name = format!("Mook {}", generator.next().unwrap());
+                let entity = entity::Entity::new(random_name.as_str(), *mookvalue, *mookd6value);
                 entity_list.push(entity);
             }
         });
@@ -100,11 +139,39 @@ impl eframe::App for TemplateApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
 
+            ui.heading("Bulk Actions");
+            if ui.button("Reroll all initiatives").clicked() {
+                for entity in entity_list.iter_mut() {
+                    entity.reroll_init();
+                }
+            }
+            if ui.button("Reorder by initiative").clicked() {
+                entity_list.sort_by(|a, b| b.cur_init.cmp(&a.cur_init));
+            }
+            if ui.button("Refresh combat pass").clicked() {
+                for entity in entity_list.iter_mut() {
+                    entity.turn_taken = false;
+                }
+            }
+
             ui.heading("Initiative Entities:");
             let mut remove_list: Vec<String> = vec![];
-            for entity in entity_list.iter() {
+            for entity in entity_list.iter_mut() {
                 ui.horizontal(|ui| {
-                    ui.label(format!("{}", entity));
+                    if entity.turn_taken {
+                        ui.label(format!("{}", entity));
+                    } else {
+                        ui.strong(format!("{}", entity));
+                    }
+                    if ui.button("Take Turn").clicked() {
+                        entity.take_turn();
+                    }
+                    if ui.button("Interrupt (-5)").clicked() {
+                        entity.interrupt(5);
+                    }
+                    if ui.button("Interrupt (-10)").clicked() {
+                        entity.interrupt(10);
+                    }
                     if ui.button("Remove").clicked() {
                         remove_list.push(String::from(&entity.name));
                     };
