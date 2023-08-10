@@ -150,7 +150,9 @@ impl eframe::App for TemplateApp {
             }
             if ui.button("Refresh combat pass").clicked() {
                 for entity in entity_list.iter_mut() {
-                    entity.turn_taken = false;
+                    if entity.cur_init > 0 {
+                        entity.turn_taken = false;
+                    }
                 }
             }
 
