@@ -1,3 +1,5 @@
+use crate::Entity;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -7,7 +9,11 @@ pub struct TemplateApp {
 
     // this how you opt-out of serialization of a member
     #[serde(skip)]
-    value: f32,
+    value: u32,
+    #[serde(skip)]
+    d6value: u32,
+
+    entity_list: Vec<Entity::Entity>,
 }
 
 impl Default for TemplateApp {
@@ -15,7 +21,9 @@ impl Default for TemplateApp {
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
-            value: 2.7,
+            value: 10,
+            d6value: 1,
+            entity_list: vec![],
         }
     }
 }
@@ -45,7 +53,12 @@ impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
+        let Self {
+            label,
+            value,
+            d6value,
+            entity_list,
+        } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -60,48 +73,44 @@ impl eframe::App for TemplateApp {
                     if ui.button("Quit").clicked() {
                         _frame.close();
                     }
+                    if ui.button("Clear Entity List").clicked() {
+                        entity_list.clear();
+                    }
                 });
             });
         });
 
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
+        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            ui.heading("Bottom Panel");
 
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(label);
-            });
+            ui.label("Name:");
+            ui.text_edit_singleline(label);
+            ui.label("Base Init.:");
+            ui.add(egui::Slider::new(value, 0..=20));
+            ui.label("Init d6");
+            ui.add(egui::Slider::new(d6value, 0..=6));
 
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                *value += 1.0;
+            if ui.button("Add Entity").clicked() {
+                let entity = Entity::Entity::new(label, *value, *d6value);
+                println!("Adding entity: {}", entity);
+                entity_list.push(entity);
             }
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
-                });
-            });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
 
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-            egui::warn_if_debug_build(ui);
+            ui.heading("Initiative Entities:");
+            let mut remove_list: Vec<String> = vec![];
+            for entity in entity_list.iter() {
+                ui.horizontal(|ui| {
+                    ui.label(format!("{}", entity));
+                    if ui.button("Remove").clicked() {
+                        remove_list.push(String::from(&entity.name));
+                    };
+                });
+            }
+            entity_list.retain(|e| !remove_list.contains(&e.name));
         });
 
         if false {
