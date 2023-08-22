@@ -17,6 +17,10 @@ pub struct TemplateApp {
     mookvalue: u32,
     #[serde(skip)]
     mookd6value: u32,
+    #[serde(skip)]
+    autosort: bool,
+    #[serde(skip)]
+    autosort_combatpass: bool,
 
     entity_list: Vec<entity::Entity>,
 }
@@ -30,6 +34,8 @@ impl Default for TemplateApp {
             d6value: 1,
             mookvalue: 10,
             mookd6value: 1,
+            autosort: false,
+            autosort_combatpass: false,
             entity_list: vec![],
         }
     }
@@ -66,6 +72,8 @@ impl eframe::App for TemplateApp {
             d6value,
             mookvalue,
             mookd6value,
+            autosort,
+            autosort_combatpass,
             entity_list,
         } = self;
 
@@ -144,6 +152,9 @@ impl eframe::App for TemplateApp {
                 for entity in entity_list.iter_mut() {
                     entity.reroll_init();
                 }
+                if *autosort {
+                    entity_list.sort_by(|a, b| b.cur_init.cmp(&a.cur_init));
+                }
             }
             if ui.button("Reorder by initiative").clicked() {
                 entity_list.sort_by(|a, b| b.cur_init.cmp(&a.cur_init));
@@ -154,7 +165,13 @@ impl eframe::App for TemplateApp {
                         entity.turn_taken = false;
                     }
                 }
+                if *autosort_combatpass {
+                    entity_list.sort_by(|a, b| b.cur_init.cmp(&a.cur_init));
+                }
             }
+
+            ui.checkbox(autosort, "Re-sort on initiative reroll");
+            ui.checkbox(autosort_combatpass, "Re-sort on Combat Pass Refresh");
 
             ui.heading("Initiative Entities:");
             let mut remove_list: Vec<String> = vec![];
