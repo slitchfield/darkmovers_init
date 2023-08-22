@@ -1,6 +1,8 @@
 use crate::entity;
 use names::Generator;
 
+use eframe::egui::{Style, Visuals};
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -92,6 +94,12 @@ impl eframe::App for TemplateApp {
                     }
                     if ui.button("Clear Entity List").clicked() {
                         entity_list.clear();
+                    }
+                    if ui.button("Set Dark Theme").clicked() {
+                        ctx.set_visuals(Visuals::dark());
+                    }
+                    if ui.button("Set Light Theme").clicked() {
+                        ctx.set_visuals(Visuals::light());
                     }
                 });
             });
