@@ -90,7 +90,7 @@ impl eframe::App for TemplateApp {
         });
 
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-            ui.heading("Bottom Panel");
+            ui.heading("Add Named Characters");
 
             ui.label("Name:");
             ui.text_edit_singleline(label);
