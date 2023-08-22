@@ -194,6 +194,7 @@ impl eframe::App for TemplateApp {
                     if ui.button("Remove").clicked() {
                         remove_list.push(String::from(&entity.name));
                     };
+                    ui.text_edit_singleline(&mut entity.notes);
                 });
             }
             entity_list.retain(|e| !remove_list.contains(&e.name));
