@@ -1,6 +1,8 @@
 use crate::entity;
 use names::Generator;
 
+use eframe::egui::{Style, Visuals};
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -17,6 +19,10 @@ pub struct TemplateApp {
     mookvalue: u32,
     #[serde(skip)]
     mookd6value: u32,
+    #[serde(skip)]
+    autosort: bool,
+    #[serde(skip)]
+    autosort_combatpass: bool,
 
     entity_list: Vec<entity::Entity>,
 }
@@ -30,6 +36,8 @@ impl Default for TemplateApp {
             d6value: 1,
             mookvalue: 10,
             mookd6value: 1,
+            autosort: false,
+            autosort_combatpass: false,
             entity_list: vec![],
         }
     }
@@ -66,6 +74,8 @@ impl eframe::App for TemplateApp {
             d6value,
             mookvalue,
             mookd6value,
+            autosort,
+            autosort_combatpass,
             entity_list,
         } = self;
 
@@ -85,12 +95,18 @@ impl eframe::App for TemplateApp {
                     if ui.button("Clear Entity List").clicked() {
                         entity_list.clear();
                     }
+                    if ui.button("Set Dark Theme").clicked() {
+                        ctx.set_visuals(Visuals::dark());
+                    }
+                    if ui.button("Set Light Theme").clicked() {
+                        ctx.set_visuals(Visuals::light());
+                    }
                 });
             });
         });
 
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-            ui.heading("Bottom Panel");
+            ui.heading("Add Named Characters");
 
             ui.label("Name:");
             ui.text_edit_singleline(label);
@@ -144,6 +160,9 @@ impl eframe::App for TemplateApp {
                 for entity in entity_list.iter_mut() {
                     entity.reroll_init();
                 }
+                if *autosort {
+                    entity_list.sort_by(|a, b| b.cur_init.cmp(&a.cur_init));
+                }
             }
             if ui.button("Reorder by initiative").clicked() {
                 entity_list.sort_by(|a, b| b.cur_init.cmp(&a.cur_init));
@@ -154,7 +173,13 @@ impl eframe::App for TemplateApp {
                         entity.turn_taken = false;
                     }
                 }
+                if *autosort_combatpass {
+                    entity_list.sort_by(|a, b| b.cur_init.cmp(&a.cur_init));
+                }
             }
+
+            ui.checkbox(autosort, "Re-sort on initiative reroll");
+            ui.checkbox(autosort_combatpass, "Re-sort on Combat Pass Refresh");
 
             ui.heading("Initiative Entities:");
             let mut remove_list: Vec<String> = vec![];
@@ -180,6 +205,7 @@ impl eframe::App for TemplateApp {
                     if ui.button("Remove").clicked() {
                         remove_list.push(String::from(&entity.name));
                     };
+                    ui.text_edit_singleline(&mut entity.notes);
                 });
             }
             entity_list.retain(|e| !remove_list.contains(&e.name));

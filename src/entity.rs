@@ -8,6 +8,7 @@ pub struct Entity {
     pub d6_init: u32,
     pub cur_init: u32,
     pub turn_taken: bool,
+    pub notes: String,
 }
 
 impl Entity {
@@ -18,6 +19,7 @@ impl Entity {
             d6_init,
             cur_init: 0,
             turn_taken: false,
+            notes: String::from(""),
         }
     }
 
@@ -55,6 +57,7 @@ impl Default for Entity {
             d6_init: 1,
             cur_init: 0,
             turn_taken: false,
+            notes: String::from(""),
         }
     }
 }
