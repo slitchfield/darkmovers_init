@@ -174,6 +174,9 @@ impl eframe::App for TemplateApp {
                     if ui.button("Interrupt (-10)").clicked() {
                         entity.interrupt(10);
                     }
+                    if ui.button("Increment Initiative (+1)").clicked() {
+                        entity.cur_init += 1;
+                    }
                     if ui.button("Remove").clicked() {
                         remove_list.push(String::from(&entity.name));
                     };
